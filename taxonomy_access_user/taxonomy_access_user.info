@@ -1,0 +1,6 @@
+; $Id$
+name = Taxonomy user access control
+description = Adds a taxonomy based access control for users
+package = Other
+core = 6.x
+dependencies[] = taxonomy

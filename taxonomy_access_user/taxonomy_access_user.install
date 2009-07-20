@@ -1,0 +1,75 @@
+<?php
+// $Id$
+/**
+ * @file
+ * This file adds information for module install and uninstall
+ */
+
+function taxonomy_access_user_schema() {
+  $schema['term_access_user'] = array(
+    'description' => t('The table for term access'),
+    'fields' => array(
+      'tauid' => array(
+        'description' => t('The primary identifier for a term access.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'tid' => array(
+        'description' => t('The primary identifier for a term.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'uid' => array(
+        'description' => t('The primary identifier for a user.'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE),
+      'grant_view' => array(
+        'description' => 'Boolean indicating whether a user with the realm/grant pair can view this term.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny'),
+      'grant_update' => array(
+        'description' => 'Boolean indicating whether a user with the realm/grant pair can edit this term.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny'),
+      'grant_delete' => array(
+        'description' => 'Boolean indicating whether a user with the realm/grant pair can delete this term.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny'),
+      'grant_admin' => array(
+        'description' => 'Boolean indicating whether a user with the realm/grant pair can admin this term.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny'),
+    ),
+    'primary key' => array('tauid'),
+    'unique keys' => array(
+      'uid_tid' => array('uid', 'tid')
+    ),
+  );
+
+  return $schema;
+}
+
+
+
+function taxonomy_access_user_install() {
+  drupal_install_schema('taxonomy_access_user');
+  variable_set('taxonomy_access_user_vids', array());
+}
+
+function taxonomy_access_user_uninstall() {
+  drupal_uninstall_schema('taxonomy_access_user');
+}
+
