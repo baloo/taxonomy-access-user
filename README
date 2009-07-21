@@ -1,0 +1,58 @@
+At first sight, you may think it's just another fork of already available module
+on drupal.org like taxonomy_access or tac_lite. First one is a taxonomy control
+access based on roles, second one is a taxonomy control access based on users. But
+both of those modules miss the - according to me essential - inheritance notion :
+if you have access to one term, you don't automatically have access to the children
+nodes. My module does take care about inheritance and this way permit a powerfull
+user access control.
+
+Description:
+For this description, I will try to illustrate the module with the following term
+scheme:
+     1 (root) -> 2 -> 4
+                   -> 5 -> 7
+              -> 3 -> 6
+
+The basic idea of inheritance is : if you have access to one term then you may
+access all children terms.
+
+So I provided 4 different grant access for this module:
+  - grant_view
+    Which controls whether the user may view nodes associated to this term
+  - grant_update
+    Which controls whether the user may add nodes associated to this term or edit
+    them
+  - grant_delete
+    Which controls whether the user may delete nodes associated to this term
+  - grant_admin
+    Which is the most particular grant out of the four.
+
+The last grant access (grant_admin) permits a user to "delegate" control of an access
+over a term to another user : if a lambda use has the grant_admin over the term 2, he
+may grant view to another user to terms 2, 4, 5 or 7.
+
+So now you are familiar with the possible grant access, if the user lambda have
+grant_view on the term 1, then he may view nodes associated with the term 1, 2, 3, 4,
+ 5, 6 and/or 7. The only record in the database about the grant access is about the
+term 1. To reach this goal in a reasonnable amount of time and with simple queries, I
+used SQL functions in the DBMS. Availability of those functions is controlled each
+time the module is invoked by the hook_init which permit not to break the module even
+if the database is transfered to another dbms and if the user has forgot to backup
+sql functions :).
+
+Yet another feature of this module is the ability to restrain access to a subtree
+while he still have access to the other part. For example, if i set grant_view = 1 to
+the term 1 to the user lambda and grant_view = -1 to the term 2, then the user may view
+terms 1, 3 and 6 while access to terms 2, 4, 5 and 7 would be denied. The default value
+is 0 and it's the value which permits inheritance.
+
+
+This module also provides a UI to administer the module, views and views handler for
+specific fields.
+
+This module could have multiple applications :
+  - An e-commerce website where a department supervisor may edit nodes associated to
+his department or delegate rights to his employees
+  - An news website where the person in charge of the sport section may only create
+articles in his own section or may delegate access to the golf area to one specific
+person.
