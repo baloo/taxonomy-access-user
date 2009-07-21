@@ -520,7 +520,7 @@ function taxonomy_access_user_views_handlers() {
       'views_handler_field_taxonomy_access_user_link_edit' => array(
         'parent' => 'views_handler_field',
       ),
-      'views_handler_field_ternary' => array(
+      'views_handler_field_multiple_values' => array(
         'parent' => 'views_handler_field',
       ),
     ),
