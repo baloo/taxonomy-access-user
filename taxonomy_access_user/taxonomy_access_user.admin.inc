@@ -182,7 +182,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
       '#type' => 'radios',
       '#title' => t('@op term', array('@op' => $op)),
       '#default_value' => intval($tauid->{'grant_'. $op}),
-      '#options' => array(-1 => t('No'), 0 => t('Default'), 1 => t('Yes')),
+      '#options' => array(-1 => t('No'), 0 => t('Inherit'), 1 => t('Yes')),
     );
     // Unset the default value if it is the root tid
     if (count($parents) === 0)
