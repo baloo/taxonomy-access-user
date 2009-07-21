@@ -41,7 +41,7 @@ class views_handler_field_multiple_values extends views_handler_field {
 
     if (isset($types[$value]))
       return $types[$value];
-    else 
+    else
       return reset($types);
 
   }

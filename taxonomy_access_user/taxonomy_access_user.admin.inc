@@ -185,7 +185,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
       '#options' => array(-1 => t('No'), 0 => t('Default'), 1 => t('Yes')),
     );
     // Unset the default value if it is the root tid
-    if(count($parents) === 0)
+    if (count($parents) === 0)
       unset($form['permissions']['grant_'. $op]['#options'][0]);
   }
 }
