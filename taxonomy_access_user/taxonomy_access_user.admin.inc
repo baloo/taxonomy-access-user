@@ -11,7 +11,7 @@ function taxonomy_access_user_yes_no_render($value) {
   case 1:
     return t('Yes');
   case 0:
-    return t('Default');
+    return t('Inherit');
   case -1:
     return t('No');
   default:
