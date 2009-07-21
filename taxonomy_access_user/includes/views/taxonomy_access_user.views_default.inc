@@ -91,7 +91,9 @@ function taxonomy_access_user_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'type' => 'yes-default-no',
+      'types' => '-1|No
+0|Inherit
+1|Yes',
       'not' => 0,
       'exclude' => 0,
       'id' => 'grant_view',
@@ -118,7 +120,9 @@ function taxonomy_access_user_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'type' => 'yes-default-no',
+      'types' => '-1|No
+0|Inherit
+1|Yes',
       'not' => 0,
       'exclude' => 0,
       'id' => 'grant_update',
@@ -145,7 +149,9 @@ function taxonomy_access_user_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'type' => 'yes-default-no',
+      'types' => '-1|No
+0|Inherit
+1|Yes',
       'not' => 0,
       'exclude' => 0,
       'id' => 'grant_delete',
@@ -172,7 +178,9 @@ function taxonomy_access_user_views_default_views() {
         'strip_tags' => 0,
         'html' => 0,
       ),
-      'type' => 'yes-default-no',
+      'types' => '-1|No
+0|Inherit
+1|Yes',
       'not' => 0,
       'exclude' => 0,
       'id' => 'grant_admin',

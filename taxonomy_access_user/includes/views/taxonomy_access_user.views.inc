@@ -53,7 +53,7 @@ function taxonomy_access_user_views_data() {
     'title' => t('Grant view'),
     'help' => t('View nodes associated to the term'),
     'field' => array(
-      'handler' => 'views_handler_field_ternary',
+      'handler' => 'views_handler_field_multiple_values',
       'click sortable' => TRUE,
     ),
   );
@@ -62,7 +62,7 @@ function taxonomy_access_user_views_data() {
     'title' => t('Grant update'),
     'help' => t('Update nodes associated to the term'),
     'field' => array(
-      'handler' => 'views_handler_field_ternary',
+      'handler' => 'views_handler_field_multiple_values',
       'click sortable' => TRUE,
     ),
   );
@@ -71,7 +71,7 @@ function taxonomy_access_user_views_data() {
     'title' => t('Grant delete'),
     'help' => t('Delete nodes associated to the term'),
     'field' => array(
-      'handler' => 'views_handler_field_ternary',
+      'handler' => 'views_handler_field_multiple_values',
       'click sortable' => TRUE,
     ),
   );
@@ -80,7 +80,7 @@ function taxonomy_access_user_views_data() {
     'title' => t('Grant admin'),
     'help' => t('Admin the term'),
     'field' => array(
-      'handler' => 'views_handler_field_ternary',
+      'handler' => 'views_handler_field_multiple_values',
       'click sortable' => TRUE,
     ),
   );
