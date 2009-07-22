@@ -491,41 +491,7 @@ function taxonomy_access_user_access_form_access($tauid) {
 }
 
 
-/**
- * Implementation of hook_views_api().
- */
-function taxonomy_access_user_views_api() {
-  $return = array(
-    'api' => 2.0,
-    'path' => drupal_get_path('module', 'taxonomy_access_user') .'/includes/views',
-  );
-  return $return;
-}
 
-/**
- * Implementation of hook_views_handlers().
- * to register all of the basic handlers
- * views uses.
- */
-function taxonomy_access_user_views_handlers() {
-  return array(
-    'info' => array(
-      'path' => drupal_get_path('module', 'taxonomy_access_user') .'/includes/views/handlers',
-    ),
-    'handlers' => array(
-      // field handlers
-      'views_handler_field_taxonomy_access_user_link_delete' => array(
-        'parent' => 'views_handler_field',
-      ),
-      'views_handler_field_taxonomy_access_user_link_edit' => array(
-        'parent' => 'views_handler_field',
-      ),
-      'views_handler_field_multiple_values' => array(
-        'parent' => 'views_handler_field',
-      ),
-    ),
-  );
-}
 
 /**
  * Implementation of hook_db_rewrite_sql().
@@ -574,23 +540,4 @@ function taxonomy_access_user_init() {
 }
 
 
-/**
- * Implementation of hook_views_pre_build().
- */
-function taxonomy_access_user_views_pre_build(&$view) {
-  if ($view->name === 'taxonomy_access_users') {
 
-    // Add header 'delegate to another user' link
-    $view->attachment_before = l(
-        t('Delegate to another user'),
-        'taxonomy/access/edit/term/'. reset($view->args) .'/add/access',
-        array(
-          'attributes' => array(
-            'class' => 'popups-form-reload',
-          ),
-        )
-      );
-
-    $view->set_display('block_1');
-  }
-}

@@ -1,0 +1,7 @@
+; $Id$
+name = Taxonomy user access control views
+description = Adds views for taxonomy user access
+package = Other
+core = 6.x
+dependencies[] = taxonomy_access_user
+dependencies[] = views
