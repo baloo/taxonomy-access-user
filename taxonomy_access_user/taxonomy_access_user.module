@@ -465,7 +465,7 @@ function taxonomy_access_user_vocabulary_admin($vocabulary) {
  * This function controls access to the module administration forms
  */
 function taxonomy_access_user_access_form_access($tauid) {
-  global $user;
+  global $user, $db_prefix;
 
   if (!is_object($tauid))
     return FALSE;
@@ -480,7 +480,7 @@ function taxonomy_access_user_access_form_access($tauid) {
     return TRUE;
 
   // Else verify with the database
-  $result = db_query('SELECT grant_admin(tid,%d) FROM {term_access_user} WHERE tauid = %d', $user->uid, $tauid->tauid);
+  $result = db_query('SELECT '. $db_prefix .'_grant_admin(tid,%d) FROM {term_access_user} WHERE tauid = %d', $user->uid, $tauid->tauid);
 
   if ($row = db_fetch_array($result)) {
     if (reset($row) == 1) {
@@ -498,7 +498,7 @@ function taxonomy_access_user_access_form_access($tauid) {
  * This function controls whether the user can display or not term list
  */
 function taxonomy_access_user_db_rewrite_sql($query, $primary_table, $primary_field, $args) {
-  global $user;
+  global $user, $db_prefix;
   switch ($primary_table) {
   case 't':
   case '{term_data}':
@@ -508,7 +508,7 @@ function taxonomy_access_user_db_rewrite_sql($query, $primary_table, $primary_fi
         $vids = variable_get('taxonomy_access_user_vids', array());
         $uid = !empty($user->uid)? $user->uid: 0;
         $uid = intval($uid);
-        $return['where'] = "$primary_table.vid NOT IN('". implode($vids, "','") ."') OR grant_view($primary_table.tid, ". $uid .")";
+        $return['where'] = "$primary_table.vid NOT IN('". implode($vids, "','") ."') OR ". $db_prefix ."_grant_view($primary_table.tid, ". $uid .")";
       }
     }
     return $return;
@@ -522,10 +522,10 @@ function taxonomy_access_user_db_rewrite_sql($query, $primary_table, $primary_fi
  * This function verify the SQL functions are still here or it reinstall them
  */
 function taxonomy_access_user_init() {
-  global $db_url;
+  global $db_url, $db_prefix;
   $url = parse_url($db_url);
 
-  $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
+  $ops = array($db_prefix .'_grant_view', $db_prefix .'_grant_update', $db_prefix .'_grant_delete', $db_prefix .'_grant_admin');
 
   $result = db_query("SHOW FUNCTION STATUS
     WHERE Db = '%s' AND Name IN ('". implode($ops, '\',\'') ."');",

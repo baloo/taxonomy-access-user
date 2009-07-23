@@ -9,14 +9,14 @@
  * Function that will delete custom functions in the sql
  */
 function taxonomy_access_user_sql_uninstall() {
-  global $db_type;
+  global $db_type, $db_prefix;
 
   $ops = array('view', 'update', 'delete', 'admin');
   switch ($db_type) {
   case 'mysql':
   case 'mysqli':
   case 'pgsql':
-    $sql = 'DROP FUNCTION IF EXISTS grant_%op;';
+    $sql = 'DROP FUNCTION IF EXISTS '. $db_prefix .'_grant_%op;';
     break;
   }
 
@@ -38,7 +38,7 @@ function taxonomy_access_user_sql_install() {
   case 'mysql':
   case 'mysqli':
     $grant[] = <<<EOF
-CREATE FUNCTION grant_%op (atid INT, auid INT)
+CREATE FUNCTION %prefix_grant_%op (atid INT, auid INT)
 RETURNS INT
 DETERMINISTIC
 BEGIN
@@ -66,7 +66,7 @@ EOF;
   case 'pgsql':
     $grant[] = <<<EOF
 CREATE LANGUAGE plpgsql;
-CREATE FUNCTION grant_%op(atid INT, auid INT) RETURNS INT AS $$
+CREATE FUNCTION %prefix_grant_%op(atid INT, auid INT) RETURNS INT AS $$
 DECLARE
   my%op integer := 0;
   curtid integer;
@@ -97,7 +97,7 @@ EOF;
 
   foreach ($ops as $op) {
     foreach ($grant as $query) {
-      $grants[$op][] = str_replace('%op', $op, $query);
+      $grants[$op][] = str_replace('%prefix', $db_prefix, str_replace('%op', $op, $query));
     }
   }
 
@@ -115,7 +115,7 @@ EOF;
  * Function that permit to check grant access over a term for a user
  */
 function _taxonomy_access_user_access($terms, $access, $account = NULL) {
-  global $user;
+  global $user, $db_prefix;
 
   if ($account === NULL)
     $account = $user;
@@ -132,7 +132,7 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
     );
   }
 
-  $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
+  $ops = array($db_prefix .'_grant_view', $db_prefix .'_grant_update', $db_prefix .'_grant_delete', $db_prefix .'_grant_admin');
 
   $grant = FALSE;
 
@@ -172,10 +172,10 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
 
   $result = db_query("SELECT
     tid,
-    grant_view(tid, %d) as grant_view,
-    grant_update(tid, %d) as grant_update,
-    grant_delete(tid, %d) as grant_delete,
-    grant_admin(tid, %d) as grant_admin
+    ". $db_prefix ."_grant_view(tid, %d) as grant_view,
+    ". $db_prefix ."_grant_update(tid, %d) as grant_update,
+    ". $db_prefix ."_grant_delete(tid, %d) as grant_delete,
+    ". $db_prefix ."_grant_admin(tid, %d) as grant_admin
     FROM {term_data}
     WHERE
       tid IN ('%s')",
