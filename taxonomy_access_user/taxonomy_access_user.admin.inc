@@ -150,9 +150,17 @@ function taxonomy_access_user_add_access_validate($form, &$form_state) {
 }
 
 function taxonomy_access_user_add_access_submit($form, &$form_state) {
+  module_load_include('inc', 'taxonomy_access_user');
   $user = user_load(array('name' => $form_state['values']['user']));
 
   taxonomy_access_user_control('add', taxonomy_get_term($form_state['values']['term']), $form_state['values'], $user);
+
+  $terms = array(taxonomy_get_term($form_state['values']['term']));
+  $terms = array_merge($terms, taxonomy_get_children($form_state['values']['term']));
+
+  $affected_nids = _taxonomy_access_user_get_nodes_from_terms($terms);
+
+  _taxonomy_access_user_node_access_update($affected_nids);
 }
 
 /**
@@ -292,6 +300,10 @@ function taxonomy_access_user_access_delete($form_state, $tauid) {
   $account = user_load($tauid->uid);
   $term = taxonomy_get_term($tauid->tid);
 
+  $form['term'] = array(
+    '#type' => 'value',
+    '#value' => $tauid->tid,
+  );
   $form['tauid'] = array(
     '#type' => 'value',
     '#value' => $tauid->tauid,
@@ -314,6 +326,14 @@ function taxonomy_access_user_access_delete($form_state, $tauid) {
  */
 function taxonomy_access_user_access_delete_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
+    module_load_include('inc', 'taxonomy_access_user');
+    $terms = array(taxonomy_get_term($form_state['values']['term']));
+    $terms = array_merge($terms, taxonomy_get_children($form_state['values']['term']));
+
+    $affected_nids = _taxonomy_access_user_get_nodes_from_terms($terms);
+
+    _taxonomy_access_user_node_access_update($affected_nids);
+
     db_query('DELETE FROM {term_access_user} WHERE tauid = %d', $form_state['values']['tauid']);
   }
 }

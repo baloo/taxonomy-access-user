@@ -238,7 +238,8 @@ function taxonomy_access_user_node_access_records($node) {
     }
 
     // Fetch all users who may access the node
-    $result = db_query("SELECT uid FROM {term_access_user} WHERE tid IN ('%s')", implode($all_tids, "','"));
+    $placeholders = db_placeholders($all_tids);
+    $result = db_query("SELECT DISTINCT uid FROM {term_access_user} WHERE tid IN ($placeholders)", $all_tids);
     $uids = array();
     while ($row = db_fetch_object($result)) {
       $uids[] = $row->uid;
