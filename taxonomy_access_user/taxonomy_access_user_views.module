@@ -8,10 +8,10 @@
 /**
  * Implementation of hook_views_api().
  */
-function taxonomy_access_user_views_api() {
+function taxonomy_access_user_views_views_api() {
   $return = array(
     'api' => 2.0,
-    'path' => drupal_get_path('module', 'taxonomy_access_user') .'/includes/views',
+    'path' => drupal_get_path('module', 'taxonomy_access_user_views') .'/includes/views',
   );
   return $return;
 }
@@ -21,10 +21,10 @@ function taxonomy_access_user_views_api() {
  * to register all of the basic handlers
  * views uses.
  */
-function taxonomy_access_user_views_handlers() {
+function taxonomy_access_user_views_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'taxonomy_access_user') .'/includes/views/handlers',
+      'path' => drupal_get_path('module', 'taxonomy_access_user_views') .'/includes/views/handlers',
     ),
     'handlers' => array(
       // field handlers
@@ -46,7 +46,7 @@ function taxonomy_access_user_views_handlers() {
 /**
  * Implementation of hook_views_pre_build().
  */
-function taxonomy_access_user_views_pre_build(&$view) {
+function taxonomy_access_user_views_views_pre_build(&$view) {
   if ($view->name === 'taxonomy_access_users') {
 
     // Add header 'delegate to another user' link

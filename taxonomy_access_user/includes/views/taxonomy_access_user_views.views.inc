@@ -5,7 +5,7 @@
  * this file defines the fields for the term_access_user table
  */
 
-function taxonomy_access_user_views_data() {
+function taxonomy_access_user_views_views_data() {
   $data[TAXONOMY_ACCESS_USER_TABLE]['table']['group']  = t('Term access');
 
   // Advertise this table as a possible base table
