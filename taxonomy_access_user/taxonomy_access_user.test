@@ -1,0 +1,175 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Test file for taxonomy_access_user module
+ */
+
+
+/**
+ * Class with common helper methods.
+ */
+class TaxonomyAccessUserWebTestCase extends DrupalWebTestCase {
+
+  protected $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
+
+  /**
+   * Returns a new vocabulary with random properties.
+   */
+  protected function create_vocabulary() {
+    // Create a vocabulary.
+    $vocabulary = new stdClass();
+    $vocabulary->name = $this->randomName();
+    $vocabulary->description = $this->randomName();
+    $vocabulary->machine_name = drupal_strtolower($this->randomName());
+    $vocabulary->help = '';
+    $vocabulary->nodes = array('article' => 'article');
+    $vocabulary->weight = mt_rand(0, 10);
+    $array_vocabulary = (array) $vocabulary;
+    taxonomy_save_vocabulary($array_vocabulary);
+    $vocabulary->vid = $array_vocabulary['vid'];
+    return $vocabulary;
+  }
+
+  /**
+   * Returns a new term with random properties in vocabulary $vid.
+   */
+  function create_term($vocabulary) {
+    $term = new stdClass();
+    $term->name = $this->randomName();
+    $term->vid = $vocabulary->vid;
+    $array_term = (array) $term;
+    taxonomy_save_term($array_term);
+    $term->tid = $array_term['tid'];
+    return $term;
+  }
+
+  /**
+   * Returns the root of a terms tree
+   */
+  function create_term_tree($vocabulary, $n = 2) {
+    if ($n >= 1) {
+      $root_term = $this->create_term($vocabulary);
+      if ($n > 1) {
+        $subtree = $this->create_term_tree($vocabulary, --$n);
+        $subtree->parent = $root_term->tid;
+        $array_subtree = (array) $subtree;
+        taxonomy_save_term($array_subtree);
+      }
+
+      return $root_term;
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns access possibilities
+   */
+  function access_combinations() {
+    $result = array();
+
+    foreach ($this->ops as $op) {
+      foreach ($result as $key => $op1) {
+        $result[] = $op1;
+        $result[$key][$op] = 1;
+      }
+      $result[] = array($op => 1);
+    }
+
+    return $result;
+  }
+}
+
+
+/**
+ * Tests for the taxonomy access user interface.
+ */
+class TaxonomyAccessUnitTest extends TaxonomyAccessUserWebTestCase {
+  // Information about this module
+  public static function getInfo() {
+    return array(
+      'name' => 'Taxonomy Access User',
+      'description' => 'Ensure that the taxonomy based access control functions properly.',
+      'group' => 'Taxonomy Access Control',
+    );
+  }
+
+  // Activate this module in the drupal
+  public function setUp() {
+    parent::setUp('taxonomy_access_user');
+  }
+
+
+  public function testCreateTaxonomyAccess() {
+    $access = $this->access_combinations();
+    foreach ($access as $value) {
+      $vocabulary = $this->create_vocabulary();
+      $term = $this->create_term($vocabulary);
+      $user = $this->drupalCreateUser();
+      $this->assertNotEqual(0, taxonomy_access_user_control('add', $term, $value, $user), "Access control successfully created", "Access control");
+    }
+  }
+
+  public function testAdminVocabulary() {
+    $access = array('grant_admin' => 1);
+    $vocabulary = $this->create_vocabulary();
+    $term = $this->create_term($vocabulary);
+    $user = $this->drupalCreateUser();
+    taxonomy_access_user_control('add', $term, $access, $user);
+
+    $this->assertTrue(taxonomy_access_user_vocabulary_admin($vocabulary, $user), "Admin vocabulary access granted", "Access control");
+  }
+
+  public function testLoadTerm() {
+    $vocabulary = $this->create_vocabulary();
+    $term = $this->create_term($vocabulary);
+
+    $this->assertTrue(is_object(taxonomy_access_user_term_load($term->tid)), "Term loaded", "Taxonomy");
+  }
+
+  public function testLoadTermAccess() {
+    foreach ($this->ops as $op) {
+      $access = array($op => 1);
+      $vocabulary = $this->create_vocabulary();
+      $term = $this->create_term($vocabulary);
+      $user = $this->drupalCreateUser();
+      $tauid = taxonomy_access_user_control('add', $term, $access, $user);
+
+      $this->assertTrue(is_object(taxonomy_access_user_access_load($tauid)), "Taxonomy access user loaded", "Access control");
+    }
+  }
+
+  public function testGrantTaxonomyAccess() {
+    $vocabulary = $this->create_vocabulary();
+
+    $result = $this->access_combinations();
+
+    foreach ($result as $test_case) {
+      $root_term = $this->create_term_tree($vocabulary, 3);
+
+      $user_a = $this->drupalCreateUser();
+
+
+      $access = array(
+        'grant_view' => (isset($test_case['grant_view'])?1:0),
+        'grant_update' => (isset($test_case['grant_update'])?1:0),
+        'grant_delete' => (isset($test_case['grant_delete'])?1:0),
+        'grant_admin' => (isset($test_case['grant_admin'])?1:0),
+      );
+
+      taxonomy_access_user_control('add', $root_term, $access, $user_a);
+
+
+      $this->assertTrue(taxonomy_access_user_control('access', $root_term, $access, $user_a), "Joined access granted", "Access control");
+
+      foreach ($this->ops as $op) {
+        if (isset($test_case[$op]) === FALSE)
+          $this->assertFalse(taxonomy_access_user_control('access', $root_term, array($op => 1), $user_a), "Unique access denied", "Access control");
+        else
+          $this->assertTrue(taxonomy_access_user_control('access', $root_term, array($op => 1), $user_a), "Unique access granted", "Access control");
+      }
+    }
+
+  }
+
+}

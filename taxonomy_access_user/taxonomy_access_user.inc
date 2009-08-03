@@ -29,7 +29,7 @@ function taxonomy_access_user_sql_uninstall() {
  * Function that will add custom functions in the sql
  */
 function taxonomy_access_user_sql_install() {
-  global $db_type, $active_db;
+  global $db_type, $active_db, $db_prefix;
 
   $ops = array('view', 'update', 'delete', 'admin');
   $grant = array();
@@ -111,16 +111,46 @@ EOF;
 }
 
 
-/**
- * Function that permit to check grant access over a term for a user
- */
-function _taxonomy_access_user_access($terms, $access, $account = NULL) {
+function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = NULL) {
   global $user, $db_prefix;
 
   if ($account === NULL)
     $account = $user;
 
-  if (user_access('administer taxonomy'))
+  $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
+
+  if (array_search($access, $ops, TRUE) === FALSE)
+    return FALSE;
+
+  $result = db_result(db_query('SELECT %s_%s(%d, %d)', $db_prefix, $access, $tid, $account->uid));
+  if ($result == '1')
+    return TRUE;
+  else
+    return FALSE;
+}
+
+function _taxonomy_access_user_access_tid($tid, $access, $account = NULL) {
+  foreach ($access as $key => $value) {
+    if ($value == 1) {
+      if (!_taxonomy_access_user_access_tid_one_access($tid, $key, $account)) {
+        return FALSE;
+      }
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Function that permit to check grant access over a term for a user
+ */
+function _taxonomy_access_user_access($terms, $access, $account = NULL) {
+  static $taxonomy_access_user_installed;
+
+  if ($taxonomy_access_user_installed !== TRUE) {
+    taxonomy_access_user_init();
+    $taxonomy_access_user_installed = TRUE;
+  }
+  if (user_access('administer taxonomy', $account))
     return TRUE;
 
   if (is_array($terms)) {
@@ -132,27 +162,13 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
     );
   }
 
-  $ops = array($db_prefix .'_grant_view', $db_prefix .'_grant_update', $db_prefix .'_grant_delete', $db_prefix .'_grant_admin');
-
-  $grant = FALSE;
-
-  foreach ($ops as $op) {
-    if (array_search($op, $access) !== FALSE) {
-      foreach ($tids as $tid) {
-        $result = db_query('SELECT %s(%d, %d)', $op, $tid, $account->uid);
-        if ($row = db_fetch_array($result)) {
-          if (reset($row) !== '1')
-            return FALSE;
-          elseif (reset($row) === '1')
-            $grant = TRUE;
-        }
-        else {
-          return FALSE;
-        }
-      }
-    }
+  foreach ($tids as $tid) {
+    $result = _taxonomy_access_user_access_tid($tid, $access, $account);
+    if ($result !== TRUE)
+      return FALSE;
   }
-  return $grant;
+
+  return TRUE;
 }
 
 

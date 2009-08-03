@@ -123,16 +123,20 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
       return NULL;
     }
 
+    $ops = array('view', 'update', 'delete', 'admin');
+
     $term_access_user = array(
       'tid'           => $term->tid,
       'uid'           => $account->uid,
-      'grant_view'    => $access['grant_view'],
-      'grant_update'  => $access['grant_update'],
-      'grant_delete'  => $access['grant_delete'],
-      'grant_admin'  => $access['grant_admin'],
     );
 
+    foreach ($ops as $op) {
+      $term_access_user['grant_'. $op] = (isset($access['grant_'. $op])? $access['grant_'. $op] : 0);
+    }
+
     @drupal_write_record('term_access_user', $term_access_user);
+
+    return $term_access_user['tauid'];
 
     break;
   case 'del':
@@ -238,8 +242,7 @@ function taxonomy_access_user_node_access_records($node) {
     }
 
     // Fetch all users who may access the node
-    $placeholders = db_placeholders($all_tids);
-    $result = db_query("SELECT DISTINCT uid FROM {term_access_user} WHERE tid IN ($placeholders)", $all_tids);
+    $result = db_query("SELECT DISTINCT uid FROM {term_access_user} WHERE tid IN (". db_placeholders($all_tids) .")", $all_tids);
     $uids = array();
     while ($row = db_fetch_object($result)) {
       $uids[] = $row->uid;
@@ -429,10 +432,13 @@ function taxonomy_access_user_access_load($tauid) {
 /**
  * Controls whether as user may admin a term of a vocabulary
  */
-function taxonomy_access_user_vocabulary_admin($vocabulary) {
+function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
   global $user;
 
-  if ($user === NULL)
+  if ($account === NULL)
+    $account = $user;
+
+  if ($account === NULL)
     return FALSE;
 
   // By default if a user has 'administer taxonomy' right, he may admin
@@ -453,7 +459,7 @@ function taxonomy_access_user_vocabulary_admin($vocabulary) {
   $result = db_query_range('SELECT 1 FROM {term_data} td
     WHERE td.vid = %d AND grant_admin(tid,%d) = 1',
     $vocabulary->vid,
-    $user->uid, 0, 1);
+    $account->uid, 0, 1);
 
   if (db_fetch_array($result))
     return TRUE;
