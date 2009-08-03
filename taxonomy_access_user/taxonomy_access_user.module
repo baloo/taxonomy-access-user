@@ -161,6 +161,16 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 
 
 /**
+ * Implementation of hook_enable().
+ * Installs the sql functions
+ */
+function taxonomy_access_user_enable() {
+  module_load_include('inc', 'taxonomy_access_user');
+  taxonomy_access_user_sql_uninstall();
+  taxonomy_access_user_sql_install();
+}
+
+/**
  * Implementation of hook_nodeapi().
  * Adds a control on the add/edit node form to control which term is
  * associated to the node

@@ -144,12 +144,6 @@ function _taxonomy_access_user_access_tid($tid, $access, $account = NULL) {
  * Function that permit to check grant access over a term for a user
  */
 function _taxonomy_access_user_access($terms, $access, $account = NULL) {
-  static $taxonomy_access_user_installed;
-
-  if ($taxonomy_access_user_installed !== TRUE) {
-    taxonomy_access_user_init();
-    $taxonomy_access_user_installed = TRUE;
-  }
   if (user_access('administer taxonomy', $account))
     return TRUE;
 
