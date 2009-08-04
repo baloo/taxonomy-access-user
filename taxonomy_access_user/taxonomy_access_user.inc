@@ -9,14 +9,14 @@
  * Function that will delete custom functions in the sql
  */
 function taxonomy_access_user_sql_uninstall() {
-  global $db_type, $db_prefix;
+  global $db_type;
 
   $ops = array('view', 'update', 'delete', 'admin');
   switch ($db_type) {
   case 'mysql':
   case 'mysqli':
   case 'pgsql':
-    $sql = 'DROP FUNCTION IF EXISTS '. $db_prefix .'_grant_%op;';
+    $sql = 'DROP FUNCTION IF EXISTS {grant_%op};';
     break;
   }
 
@@ -29,7 +29,7 @@ function taxonomy_access_user_sql_uninstall() {
  * Function that will add custom functions in the sql
  */
 function taxonomy_access_user_sql_install() {
-  global $db_type, $active_db, $db_prefix;
+  global $db_type, $active_db;
 
   $ops = array('view', 'update', 'delete', 'admin');
   $grant = array();
@@ -38,7 +38,7 @@ function taxonomy_access_user_sql_install() {
   case 'mysql':
   case 'mysqli':
     $grant[] = <<<EOF
-CREATE FUNCTION %prefix_grant_%op (atid INT, auid INT)
+CREATE FUNCTION {grant_%op} (atid INT, auid INT)
 RETURNS INT
 DETERMINISTIC
 BEGIN
@@ -66,7 +66,7 @@ EOF;
   case 'pgsql':
     $grant[] = <<<EOF
 CREATE LANGUAGE plpgsql;
-CREATE FUNCTION %prefix_grant_%op(atid INT, auid INT) RETURNS INT AS $$
+CREATE FUNCTION {grant_%op}(atid INT, auid INT) RETURNS INT AS $$
 DECLARE
   my%op integer := 0;
   curtid integer;
@@ -97,7 +97,7 @@ EOF;
 
   foreach ($ops as $op) {
     foreach ($grant as $query) {
-      $grants[$op][] = str_replace('%prefix', $db_prefix, str_replace('%op', $op, $query));
+      $grants[$op][] = str_replace('%op', $op, $query);
     }
   }
 
@@ -112,7 +112,7 @@ EOF;
 
 
 function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = NULL) {
-  global $user, $db_prefix;
+  global $user;
 
   if ($account === NULL) {
     $account = $user;
@@ -123,7 +123,7 @@ function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = N
   if (array_search($access, $ops, TRUE) === FALSE)
     return FALSE;
 
-  $result = db_result(db_query('SELECT %s_%s(%d, %d)', $db_prefix, $access, $tid, $account->uid));
+  $result = db_result(db_query('SELECT {%s}(%d, %d)', $access, $tid, $account->uid));
   if ($result == '1') {
     return TRUE;
   }
@@ -188,10 +188,10 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
 
   $result = db_query("SELECT
     tid,
-    ". $db_prefix ."_grant_view(tid, %d) as grant_view,
-    ". $db_prefix ."_grant_update(tid, %d) as grant_update,
-    ". $db_prefix ."_grant_delete(tid, %d) as grant_delete,
-    ". $db_prefix ."_grant_admin(tid, %d) as grant_admin
+    {grant_view}(tid, %d) as grant_view,
+    {grant_update}(tid, %d) as grant_update,
+    {grant_delete}(tid, %d) as grant_delete,
+    {grant_admin}(tid, %d) as grant_admin
     FROM {term_data}
     WHERE
       tid IN ('%s')",
