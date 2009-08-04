@@ -62,7 +62,15 @@ function taxonomy_access_user_schema() {
   return $schema;
 }
 
-
+/**
+ * Implementation of hook_enable().
+ * Installs the sql functions
+ */
+function taxonomy_access_user_enable() {
+  module_load_include('inc', 'taxonomy_access_user');
+  taxonomy_access_user_sql_uninstall();
+  taxonomy_access_user_sql_install();
+}
 
 function taxonomy_access_user_install() {
   drupal_install_schema('taxonomy_access_user');

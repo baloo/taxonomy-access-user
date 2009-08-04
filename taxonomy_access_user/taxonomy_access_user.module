@@ -51,10 +51,13 @@ function taxonomy_access_user_form_taxonomy_overview_terms_alter(&$form, $form_s
 
   // We will change the taxonomy_overview_term form behaviour to add 'edit permissions' link
 
-  foreach ($form as $key => $value) {
+  foreach (element_children($form) as $key) {
     // Get keys like tid:<tid>:0
-    if (drupal_substr($key, 0, 4) === 'tid:' &&
-      _taxonomy_access_user_access(taxonomy_get_term($form[$key]['#term']['tid']), array('grant_admin'))) {
+    if (!isset($form[$key]['#term']) || !isset($form[$key]['#term']['tid'])) {
+      continue;
+    }
+
+    if (_taxonomy_access_user_access(taxonomy_get_term($form[$key]['#term']['tid']), array('grant_admin'))) {
       // Adding a level into the edit array
       $form[$key]['edit']['edit']['#value'] = $form[$key]['edit']['#value'];
       unset($form[$key]['edit']['#value']);
@@ -107,19 +110,20 @@ function taxonomy_access_user_help($path, $arg) {
 function taxonomy_access_user_control($op, $term, $access = NULL, $account = NULL) {
   global $user;
 
-  if ($account === NULL)
+  if ($account === NULL) {
     $account = $user;
+  }
 
 
   if (!is_null($access) && !is_array($access)) {
-    trigger_error('$access argument is neither NULL nor array');
+    watchdog('taxonomy access user', '$access argument is neither NULL nor array');
     return NULL;
   }
 
   switch ($op) {
   case 'add':
     if (is_null($access)) {
-      trigger_error('$access argument required');
+      watchdog('taxonomy access user', '$access argument required');
       return NULL;
     }
 
@@ -146,7 +150,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
   case 'access':
 
     if (is_null($access)) {
-      trigger_error('$access argument required');
+      watchdog('taxonomy access user', '$access argument required');
       return NULL;
     }
 
@@ -160,15 +164,6 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 }
 
 
-/**
- * Implementation of hook_enable().
- * Installs the sql functions
- */
-function taxonomy_access_user_enable() {
-  module_load_include('inc', 'taxonomy_access_user');
-  taxonomy_access_user_sql_uninstall();
-  taxonomy_access_user_sql_install();
-}
 
 /**
  * Implementation of hook_nodeapi().
@@ -183,8 +178,9 @@ function taxonomy_access_user_nodeapi(&$node, $op, $a3) {
 
     $vids = variable_get('taxonomy_access_user_vids', array());
 
-    if (user_access('administer taxonomy'))
+    if (user_access('administer taxonomy')) {
       return NULL;
+    }
 
     if (count($vids) !== 0) {
       $taxos = array();
@@ -287,23 +283,28 @@ function taxonomy_access_user_node_access_records($node) {
                 'grant_delete' => (isset($done_grants['grant_delete']) === FALSE && $row->grant_delete == 1)?1:0,
               );
             }
-            if ($row->grant_view != 0)
+            if ($row->grant_view != 0) {
               $done_grants['grant_view'] = 1;
-            if ($row->grant_update != 0)
+            }
+            if ($row->grant_update != 0) {
               $done_grants['grant_update'] = 1;
-            if ($row->grant_delete != 0)
+            }
+            if ($row->grant_delete != 0) {
               $done_grants['grant_delete'] = 1;
+            }
           }
 
           // If we're done with this uid/term then break the loop
-          if (count($done_grants) === 3)
+          if (count($done_grants) === 3) {
             break;
+          }
 
           // Getting the parent for inheritance
           $myterms = taxonomy_get_parents($myterm->tid);
           // If we're at root => break loop
-          if (count($myterms) === 0)
+          if (count($myterms) === 0) {
             break;
+          }
 
           $myterm = reset($myterms);
           $parent = $myterm->tid;
@@ -341,7 +342,9 @@ function taxonomy_access_user_node_grants($account, $op) {
 function taxonomy_access_user_menu() {
   $items = array();
 
-
+  // This element permit user that don't have the "adminiter taxonomy" permission
+  // to access taxonomy term list and display a nice for to edit permissions of a 
+  // vocabulary
   $items['taxonomy/access/%taxonomy_vocabulary'] = array(
     'title' => 'List terms',
     'page callback' => 'drupal_get_form',
@@ -445,36 +448,34 @@ function taxonomy_access_user_access_load($tauid) {
 function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
   global $user;
 
-  if ($account === NULL)
+  if ($account === NULL) {
     $account = $user;
-
-  if ($account === NULL)
-    return FALSE;
+  }
 
   // By default if a user has 'administer taxonomy' right, he may admin
   // this module
-  if (user_access('administer taxonomy'))
+  if (user_access('administer taxonomy')) {
     return TRUE;
+  }
 
-  if (!is_object($vocabulary))
+  if (!is_object($vocabulary)) {
     return FALSE;
+  }
 
   // Which vids are used with this module
   $vids = variable_get('taxonomy_access_user_vids', array());
 
   // The vid is not controlled by this module
-  if (array_search($vocabulary->vid, $vids) === FALSE)
+  if (array_search($vocabulary->vid, $vids) === FALSE) {
     return FALSE;
+  }
 
   $result = db_query_range('SELECT 1 FROM {term_data} td
     WHERE td.vid = %d AND grant_admin(tid,%d) = 1',
     $vocabulary->vid,
     $account->uid, 0, 1);
 
-  if (db_fetch_array($result))
-    return TRUE;
-
-  return FALSE;
+  return (bool) db_fetch_array($result);
 }
 
 
@@ -484,25 +485,26 @@ function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
 function taxonomy_access_user_access_form_access($tauid) {
   global $user, $db_prefix;
 
-  if (!is_object($tauid))
+  if (!is_object($tauid)) {
     return FALSE;
+  }
 
   // By default if a user has 'administer taxonomy' right, he may admin
   // this module
-  if (user_access('administer taxonomy'))
+  if (user_access('administer taxonomy')) {
     return TRUE;
+  }
 
   // We already know the user can access this term
-  if ($user->uid == $tauid->uid && $tauid->grant_admin === '1')
+  if ($user->uid == $tauid->uid && $tauid->grant_admin === '1') {
     return TRUE;
+  }
 
   // Else verify with the database
   $result = db_query('SELECT '. $db_prefix .'_grant_admin(tid,%d) FROM {term_access_user} WHERE tauid = %d', $user->uid, $tauid->tauid);
 
   if ($row = db_fetch_array($result)) {
-    if (reset($row) == 1) {
-      return TRUE;
-    }
+    return (reset($row) == 1);
   }
   return FALSE;
 }

@@ -163,10 +163,12 @@ class TaxonomyAccessUnitTest extends TaxonomyAccessUserWebTestCase {
       $this->assertTrue(taxonomy_access_user_control('access', $root_term, $access, $user_a), "Joined access granted", "Access control");
 
       foreach ($this->ops as $op) {
-        if (isset($test_case[$op]) === FALSE)
+        if (isset($test_case[$op]) === FALSE) {
           $this->assertFalse(taxonomy_access_user_control('access', $root_term, array($op => 1), $user_a), "Unique access denied", "Access control");
-        else
+        }
+        else {
           $this->assertTrue(taxonomy_access_user_control('access', $root_term, array($op => 1), $user_a), "Unique access granted", "Access control");
+        }
       }
     }
 

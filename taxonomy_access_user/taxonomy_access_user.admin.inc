@@ -86,8 +86,9 @@ function taxonomy_access_user_term_edit($term) {
 function taxonomy_access_user_add_access($form_state, $term) {
   global $user;
 
-  if ($user !== NULL && $user->uid == $tauid->uid)
+  if ($user !== NULL && $user->uid == $tauid->uid) {
     drupal_set_message(t('You are about editing your own access to this term'), 'warning');
+  }
 
   $form = array();
 
@@ -125,8 +126,9 @@ function taxonomy_access_user_add_access($form_state, $term) {
 function taxonomy_access_user_add_access_validate($form, &$form_state) {
   // Tests the user
   $user = user_load(array('name' => $form_state['values']['user']));
-  if (!$user)
+  if (!$user) {
     form_set_error('user', t('User does not exist'));
+  }
 
   // Test if the user is already assigned to this term
   $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $form_state['values']['term'], $user->uid, 0, 1);
@@ -169,13 +171,16 @@ function taxonomy_access_user_add_access_submit($form, &$form_state) {
 function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid = NULL) {
   $ops = array('view', 'update', 'delete', 'admin');
 
-  if ($term != NULL)
+  if ($term != NULL) {
     $parents = taxonomy_get_parents($term->tid);
-  else
+  }
+  else {
     $parents = array(0);
+  }
 
-  if ($tauid === NULL)
+  if ($tauid === NULL) {
     $tauid = new stdClass;
+  }
 
   $form['permissions'] = array(
     '#type' => 'fieldset',
@@ -193,16 +198,18 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
       '#options' => array(-1 => t('No'), 0 => t('Inherit'), 1 => t('Yes')),
     );
     // Unset the default value if it is the root tid
-    if (count($parents) === 0)
+    if (count($parents) === 0) {
       unset($form['permissions']['grant_'. $op]['#options'][0]);
+    }
   }
 }
 
 function taxonomy_access_user_access_edit($form_state, $tauid) {
   global $user;
 
-  if ($user !== NULL && $user->uid == $tauid->uid)
+  if ($user !== NULL && $user->uid == $tauid->uid) {
     drupal_set_message(t('You are about editing your own access to this term'), 'warning');
+  }
 
   $form = array();
 
@@ -240,8 +247,9 @@ function taxonomy_access_user_access_edit($form_state, $tauid) {
 function taxonomy_access_user_access_edit_validate($form, &$form_state) {
   $user = user_load(array('name' => $form_state['values']['user']));
 
-  if (!$user)
+  if (!$user) {
     form_set_error('user', t('User does not exist'));
+  }
 
 
   $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tauid <> %d AND tid = %d AND uid = %d', $form_state['values']['term_access_user'], $form_state['values']['term'], $user->uid, 0, 1);

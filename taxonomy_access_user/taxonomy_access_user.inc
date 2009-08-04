@@ -114,8 +114,9 @@ EOF;
 function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = NULL) {
   global $user, $db_prefix;
 
-  if ($account === NULL)
+  if ($account === NULL) {
     $account = $user;
+  }
 
   $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
 
@@ -123,10 +124,12 @@ function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = N
     return FALSE;
 
   $result = db_result(db_query('SELECT %s_%s(%d, %d)', $db_prefix, $access, $tid, $account->uid));
-  if ($result == '1')
+  if ($result == '1') {
     return TRUE;
-  else
+  }
+  else {
     return FALSE;
+  }
 }
 
 function _taxonomy_access_user_access_tid($tid, $access, $account = NULL) {
@@ -144,8 +147,9 @@ function _taxonomy_access_user_access_tid($tid, $access, $account = NULL) {
  * Function that permit to check grant access over a term for a user
  */
 function _taxonomy_access_user_access($terms, $access, $account = NULL) {
-  if (user_access('administer taxonomy', $account))
+  if (user_access('administer taxonomy', $account)) {
     return TRUE;
+  }
 
   if (is_array($terms)) {
     $tids = array_keys($terms);
@@ -158,8 +162,9 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
 
   foreach ($tids as $tid) {
     $result = _taxonomy_access_user_access_tid($tid, $access, $account);
-    if ($result !== TRUE)
+    if ($result !== TRUE) {
       return FALSE;
+    }
   }
 
   return TRUE;
@@ -172,8 +177,9 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
 function _taxonomy_access_user_get_access($tids, $account = NULL) {
   global $user;
 
-  if ($account === NULL)
+  if ($account === NULL) {
     $account = $user;
+  }
 
 
   if (is_array($tids) === FALSE) {
@@ -206,10 +212,12 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
  * Add informations directly over the parameter
  */
 function _taxonomy_access_user_add_taxonomy_access(&$taxo) {
-  if (is_array($taxo))
+  if (is_array($taxo)) {
     $tids = array_keys($taxo);
-  if (is_object($taxo))
+  }
+  if (is_object($taxo)) {
     $tids = array($taxo->tid);
+  }
 
   $tids = _taxonomy_access_user_get_access($tids);
   foreach ($tids as $tid => $access) {
