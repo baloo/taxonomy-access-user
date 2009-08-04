@@ -343,7 +343,7 @@ function taxonomy_access_user_menu() {
   $items = array();
 
   // This element permit user that don't have the "adminiter taxonomy" permission
-  // to access taxonomy term list and display a nice for to edit permissions of a 
+  // to access taxonomy term list and display a nice for to edit permissions of a
   // vocabulary
   $items['taxonomy/access/%taxonomy_vocabulary'] = array(
     'title' => 'List terms',
