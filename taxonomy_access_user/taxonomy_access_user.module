@@ -15,32 +15,28 @@ define('TAXONOMY_ACCESS_USER_TABLE', 'term_access_user');
  */
 function taxonomy_access_user_form_alter(&$form, $form_state, $form_id) {
   // If the form is a node form
-  if (substr($form_id, -10, 10) !== '_node_form') {
-    return NULL;
-  }
+  if (isset($form['type']) && isset($form['#node']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    // If the form has taxonomy
+    if (isset($form['taxonomy'])) {
+      foreach ($form['taxonomy'] as $vid => $taxonomy) {
 
+        // Sanity check
+        if (is_array($taxonomy) && isset($taxonomy['#type'])) {
 
+          // If the taxonomy is value
+          if ($taxonomy['#type'] === 'value') {
 
-  // If the form has taxonomy
-  if (isset($form['taxonomy'])) {
-    foreach ($form['taxonomy'] as $vid => $taxonomy) {
+            //Verify the vid is handled by the module
+            if (array_search($vid, variable_get('taxonomy_access_user_vids', array())) !== FALSE) {
+              $term  = taxonomy_get_term($taxonomy['#value']);
 
-      // Sanity check
-      if (is_array($taxonomy) && isset($taxonomy['#type'])) {
+              // Verify the user may add/edit the node
+              if (!taxonomy_access_user_control('access', $term, array('grant_update'))) {
 
-        // If the taxonomy is value
-        if ($taxonomy['#type'] === 'value') {
-
-          //Verify the vid is handled by the module
-          if (array_search($vid, variable_get('taxonomy_access_user_vids', array())) !== FALSE) {
-            $term  = taxonomy_get_term($taxonomy['#value']);
-
-            // Verify the user may add/edit the node
-            if (taxonomy_access_user_control('access', $term, array('grant_update')) === FALSE) {
-
-              // Return access denied
-              drupal_access_denied();
-              die();
+                // Return access denied
+                drupal_access_denied();
+                die();
+              }
             }
           }
         }
@@ -145,7 +141,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
       $term_access_user['grant_'. $op] = (isset($access['grant_'. $op])? $access['grant_'. $op] : 0);
     }
 
-    if (!$tauid = db_result(db_query_range('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid, 0, 1))) {
+    if (!$tauid = db_result(db_query('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid,))) {
       drupal_write_record('term_access_user', $term_access_user);
     }
     else {
@@ -155,7 +151,6 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 
 
     return $term_access_user['tauid'];
-    break;
   case 'del':
   case 'delete':
     db_query('DELETE FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid);
@@ -170,7 +165,6 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
     module_load_include('inc', 'taxonomy_access_user');
 
     return _taxonomy_access_user_access($term, $access, $account);
-    break;
   default:
     return NULL;
   }
@@ -291,9 +285,9 @@ function taxonomy_access_user_node_access_records($node) {
               $grants[] = array(
                 'realm' => 'taxonomy_access_user',
                 'gid' => $row->tauid,
-                'grant_view' => (isset($done_grants['grant_view']) === FALSE && $row->grant_view == 1)?1:0,
-                'grant_update' => (isset($done_grants['grant_update']) === FALSE && $row->grant_update == 1)?1:0,
-                'grant_delete' => (isset($done_grants['grant_delete']) === FALSE && $row->grant_delete == 1)?1:0,
+                'grant_view' => (!isset($done_grants['grant_view']) && $row->grant_view == 1) ? 1 : 0,
+                'grant_update' => (!isset($done_grants['grant_update']) && $row->grant_update == 1) ? 1 : 0,
+                'grant_delete' => (!isset($done_grants['grant_delete']) && $row->grant_delete == 1) ? 1 : 0,
               );
             }
             if ($row->grant_view != 0) {
@@ -375,7 +369,7 @@ function taxonomy_access_user_menu() {
     'page callback' => 'taxonomy_access_user_term_edit',
     'page arguments' => array(4),
     'access callback' => 'taxonomy_access_user_control',
-    'access arguments' => array('access', 4, array('grant_admin')),
+    'access arguments' => array('access', 4, array('grant_admin' => 1)),
     'file' => 'taxonomy_access_user.admin.inc',
     'type' => MENU_CALLBACK,
   );
@@ -385,7 +379,7 @@ function taxonomy_access_user_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('taxonomy_access_user_add_access', 4),
     'access callback' => 'taxonomy_access_user_control',
-    'access arguments' => array('access', 4, array('grant_admin')),
+    'access arguments' => array('access', 4, array('grant_admin' => 1)),
     'file' => 'taxonomy_access_user.admin.inc',
     'type' => MENU_CALLBACK,
   );
@@ -483,12 +477,10 @@ function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
     return FALSE;
   }
 
-  $result = db_query_range('SELECT 1 FROM {term_data} td
+  return (bool) db_result(db_query('SELECT COUNT(*) FROM {term_data} td
     WHERE td.vid = %d AND grant_admin(tid,%d) = 1',
     $vocabulary->vid,
     $account->uid, 0, 1);
-
-  return (bool) db_fetch_array($result);
 }
 
 

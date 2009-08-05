@@ -125,7 +125,6 @@ function taxonomy_access_user_add_access($form_state, $term) {
  */
 function taxonomy_access_user_add_access_validate($form, &$form_state) {
   // Tests the user
-  $account = user_load(array('name' => $form_state['values']['user']));
   if (!$account = user_load(array('name' => $form_state['values']['user']))) {
     form_set_error('user', t('User does not exist'));
   }

@@ -174,7 +174,7 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
   }
 
 
-  if (is_array($tids) === FALSE) {
+  if (!is_array($tids)) {
     $tids = array($tids);
   }
 
@@ -186,12 +186,14 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
     {grant_admin}(tid, %d) as grant_admin
     FROM {term_data}
     WHERE
-      tid IN ('%s')",
-    $account->uid,
-    $account->uid,
-    $account->uid,
-    $account->uid,
-    implode($tids, '\',\''));
+    tid IN (". db_placeholders($tids, 'text') .")",
+      array_merge(array(
+        $account->uid,
+        $account->uid,
+        $account->uid,
+        $account->uid,
+      ),
+      $tids));
   $tids = array();
   while ($row = db_fetch_array($result)) {
     $tids[$row['tid']] = $row;
@@ -214,10 +216,12 @@ function _taxonomy_access_user_add_taxonomy_access(&$taxo) {
   $tids = _taxonomy_access_user_get_access($tids);
   foreach ($tids as $tid => $access) {
     foreach ($access as $name => $value) {
-      if (is_array($taxo))
+      if (is_array($taxo)) {
         $taxo[$tid]->$name = $value;
-      if (is_object($taxo))
+      }
+      if (is_object($taxo)) {
         $taxo->$name = $value;
+      }
 
     }
   }
