@@ -30,6 +30,7 @@ class views_handler_field_multiple_values extends views_handler_field {
 
   function render($values) {
     $value = $values->{$this->field_alias};
+    $this->link_value = $value;
 
     $lines = explode(chr(10), $this->options['types']);
 
@@ -45,6 +46,10 @@ class views_handler_field_multiple_values extends views_handler_field {
     else {
       return reset($types);
     }
+  }
 
+  function render_as_link($text, $tokens) {
+    $tokens['['. $this->field_alias .']'] = $this->link_value;
+    return parent::render_as_link($text, $tokens);
   }
 }
