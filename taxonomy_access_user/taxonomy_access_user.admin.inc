@@ -86,7 +86,7 @@ function taxonomy_access_user_term_edit($term) {
 function taxonomy_access_user_add_access($form_state, $term) {
   global $user;
 
-  if ($user !== NULL && $user->uid == $tauid->uid) {
+  if ($user->uid == $tauid->uid) {
     drupal_set_message(t('You are about editing your own access to this term'), 'warning');
   }
 
@@ -125,37 +125,36 @@ function taxonomy_access_user_add_access($form_state, $term) {
  */
 function taxonomy_access_user_add_access_validate($form, &$form_state) {
   // Tests the user
-  $user = user_load(array('name' => $form_state['values']['user']));
-  if (!$user) {
+  $account = user_load(array('name' => $form_state['values']['user']));
+  if (!$account = user_load(array('name' => $form_state['values']['user']))) {
     form_set_error('user', t('User does not exist'));
   }
 
   // Test if the user is already assigned to this term
-  $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $form_state['values']['term'], $user->uid, 0, 1);
+  $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $form_state['values']['term'], $account->uid, 0, 1);
   if ($row = db_fetch_object($result)) {
     form_set_error(
       'user',
       t(
-        'User already assigned to this term, click !link_here to edit it',
+        'User already assigned to this term, click <a href="@access-edit" class="popups-form-reload">here</a> to edit it',
         array(
-          '!link_here' => l(
-            t('here'),
-            'taxonomy/access/edit/'. $row->tauid,
+          '@access-edit' => url(
+            'taxonomy/access/edit/'. $row->tauid, 
             array(
-              'attributes' => array(
-                'class' => 'popups-form-reload',
-              ),
               'query' => drupal_get_destination(),
-            )),
-        )));
+            )
+          ),
+        )
+      )
+    );
   }
 }
 
 function taxonomy_access_user_add_access_submit($form, &$form_state) {
   module_load_include('inc', 'taxonomy_access_user');
-  $user = user_load(array('name' => $form_state['values']['user']));
+  $account = user_load(array('name' => $form_state['values']['user']));
 
-  taxonomy_access_user_control('add', taxonomy_get_term($form_state['values']['term']), $form_state['values'], $user);
+  taxonomy_access_user_control('add', taxonomy_get_term($form_state['values']['term']), $form_state['values'], $account);
 
   $terms = array(taxonomy_get_term($form_state['values']['term']));
   $terms = array_merge($terms, taxonomy_get_children($form_state['values']['term']));
@@ -207,7 +206,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
 function taxonomy_access_user_access_edit($form_state, $tauid) {
   global $user;
 
-  if ($user !== NULL && $user->uid == $tauid->uid) {
+  if ($user->uid == $tauid->uid) {
     drupal_set_message(t('You are about editing your own access to this term'), 'warning');
   }
 
@@ -245,47 +244,51 @@ function taxonomy_access_user_access_edit($form_state, $tauid) {
 }
 
 function taxonomy_access_user_access_edit_validate($form, &$form_state) {
-  $user = user_load(array('name' => $form_state['values']['user']));
-
-  if (!$user) {
+  if (!$account = user_load(array('name' => $form_state['values']['user']))) {
     form_set_error('user', t('User does not exist'));
   }
 
-
-  $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tauid <> %d AND tid = %d AND uid = %d', $form_state['values']['term_access_user'], $form_state['values']['term'], $user->uid, 0, 1);
+  $result = db_query_range('SELECT tauid FROM {term_access_user} WHERE tauid <> %d AND tid = %d AND uid = %d', $form_state['values']['term_access_user'], $form_state['values']['term'], $account->uid, 0, 1);
   if ($row = db_fetch_object($result)) {
     form_set_error(
       'user',
       t(
-        'User already assigned to this term, click !link_here to edit it',
+        'User already assigned to this term, click <a href="@access-edit" class="popups-form-reload">here</a> to edit it',
         array(
-          '!link_here' => l(
-            t('here'),
-            'taxonomy/access/edit/'. $row->tauid,
+          '@access-edit' => url(
+            'taxonomy/access/edit/'. $row->tauid, 
             array(
-              /* 'attributes' => array(
-                'class' => 'popups-form-reload',
-              ),*/
               'query' => drupal_get_destination(),
-            )),
-        )));
+            )
+          ),
+        )
+      )
+    );
   }
+
 }
 
 function taxonomy_access_user_access_edit_submit($form, &$form_state) {
   module_load_include('inc', 'taxonomy_access_user');
-  $user = user_load(array('name' => $form_state['values']['user']));
+  $account = user_load(array('name' => $form_state['values']['user']));
 
   $term_access_user = array(
     'tauid' => $form_state['values']['term_access_user'],
-    'uid' => $user->uid,
+    'uid' => $account->uid,
     'grant_view' => $form_state['values']['grant_view'],
     'grant_update' => $form_state['values']['grant_update'],
     'grant_delete' => $form_state['values']['grant_delete'],
     'grant_admin' => $form_state['values']['grant_admin'],
   );
 
-  drupal_write_record('term_access_user', $term_access_user, array('tauid'));
+  if (db_result(db_query('SELECT tauid FROM {term_access_user} WHERE tauid = %d', $form_state['values']['term_access_user'])) === FALSE) {
+    unset($term_access_user['tauid']);
+    $term_access_user['tid'] = $form_state['values']['term'];
+    drupal_write_record('term_access_user', $term_access_user);
+  }
+  else {
+    drupal_write_record('term_access_user', $term_access_user, array('tauid'));
+  )
 
   $terms = array(taxonomy_get_term($form_state['values']['term']));
   $terms = array_merge($terms, taxonomy_get_children($form_state['values']['term']));

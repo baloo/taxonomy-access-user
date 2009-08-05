@@ -14,6 +14,13 @@ define('TAXONOMY_ACCESS_USER_TABLE', 'term_access_user');
  * Control access to form creation
  */
 function taxonomy_access_user_form_alter(&$form, $form_state, $form_id) {
+  // If the form is a node form
+  if (substr($form_id, -10, 10) !== '_node_form') {
+    return NULL;
+  }
+
+
+
   // If the form has taxonomy
   if (isset($form['taxonomy'])) {
     foreach ($form['taxonomy'] as $vid => $taxonomy) {
@@ -116,14 +123,14 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 
 
   if (!is_null($access) && !is_array($access)) {
-    watchdog('taxonomy access user', '$access argument is neither NULL nor array');
+    watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument is neither NULL nor array');
     return NULL;
   }
 
   switch ($op) {
   case 'add':
     if (is_null($access)) {
-      watchdog('taxonomy access user', '$access argument required');
+      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
       return NULL;
     }
 
@@ -138,10 +145,16 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
       $term_access_user['grant_'. $op] = (isset($access['grant_'. $op])? $access['grant_'. $op] : 0);
     }
 
-    @drupal_write_record('term_access_user', $term_access_user);
+    if (!$tauid = db_result(db_query_range('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid, 0, 1))) {
+      drupal_write_record('term_access_user', $term_access_user);
+    }
+    else {
+      $term_access_user['tauid'] = $tauid;
+      drupal_write_record('term_access_user', $term_access_user, array('tauid'));
+    }
+
 
     return $term_access_user['tauid'];
-
     break;
   case 'del':
   case 'delete':
@@ -150,7 +163,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
   case 'access':
 
     if (is_null($access)) {
-      watchdog('taxonomy access user', '$access argument required');
+      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
       return NULL;
     }
 
@@ -341,15 +354,12 @@ function taxonomy_access_user_node_grants($account, $op) {
  */
 function taxonomy_access_user_menu_alter(&$items) {
   if (!isset($items['admin/content/taxonomy/%taxonomy_vocabulary'])) {
-    return NULL;
+    // This element permit user that don't have the "adminiter taxonomy" permission
+    // to access taxonomy term list and display a nice for to edit permissions of a
+    // vocabulary
+    $items['admin/content/taxonomy/%taxonomy_vocabulary']['access callback'] = 'taxonomy_access_user_vocabulary_admin';
+    $items['admin/content/taxonomy/%taxonomy_vocabulary']['access arguments'] = array(3);
   }
-
-  // This element permit user that don't have the "adminiter taxonomy" permission
-  // to access taxonomy term list and display a nice for to edit permissions of a
-  // vocabulary
-  $items['admin/content/taxonomy/%taxonomy_vocabulary']['access callback'] = 'taxonomy_access_user_vocabulary_admin';
-  $items['admin/content/taxonomy/%taxonomy_vocabulary']['access arguments'] = array(3);
-
 }
 
 

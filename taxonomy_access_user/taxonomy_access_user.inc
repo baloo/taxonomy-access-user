@@ -120,24 +120,19 @@ function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = N
 
   $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
 
-  if (array_search($access, $ops, TRUE) === FALSE)
+  if (array_search($access, $ops, TRUE) === FALSE) {
     return FALSE;
+  }
 
   $result = db_result(db_query('SELECT {%s}(%d, %d)', $access, $tid, $account->uid));
-  if ($result == '1') {
-    return TRUE;
-  }
-  else {
-    return FALSE;
-  }
+
+  return ($result == '1');
 }
 
 function _taxonomy_access_user_access_tid($tid, $access, $account = NULL) {
   foreach ($access as $key => $value) {
-    if ($value == 1) {
-      if (!_taxonomy_access_user_access_tid_one_access($tid, $key, $account)) {
-        return FALSE;
-      }
+    if ($value == 1 && !_taxonomy_access_user_access_tid_one_access($tid, $key, $account)) {
+      return FALSE;
     }
   }
   return TRUE;
@@ -155,14 +150,11 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
     $tids = array_keys($terms);
   }
   else{
-    $tids = array(
-      $terms->tid
-    );
+    $tids = array($terms->tid);
   }
 
   foreach ($tids as $tid) {
-    $result = _taxonomy_access_user_access_tid($tid, $access, $account);
-    if ($result !== TRUE) {
+    if (!_taxonomy_access_user_access_tid($tid, $access, $account)) {
       return FALSE;
     }
   }
