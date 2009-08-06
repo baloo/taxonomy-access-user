@@ -113,7 +113,7 @@ function taxonomy_access_user_help($path, $arg) {
 function taxonomy_access_user_control($op, $term, $access = NULL, $account = NULL) {
   global $user;
 
-  if ($account === NULL) {
+  if (!isset($account)) {
     $account = $user;
   }
 
@@ -455,7 +455,7 @@ function taxonomy_access_user_access_load($tauid) {
 function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
   global $user;
 
-  if ($account === NULL) {
+  if (!isset($account)) {
     $account = $user;
   }
 
@@ -539,29 +539,4 @@ function taxonomy_access_user_db_rewrite_sql($query, $primary_table, $primary_fi
     break;
   }
 }
-
-
-/**
- * Implementation of hook_init().
- * This function verify the SQL functions are still here or it reinstall them
- */
-function taxonomy_access_user_init() {
-  global $db_url;
-  $url = parse_url($db_url);
-
-  $ops = array('grant_view', 'grant_update', 'grant_delete', 'grant_admin');
-
-  $result = db_query("SHOW FUNCTION STATUS
-    WHERE Db = '%s' AND Name IN ('{". implode($ops, '\',\'') ."}');",
-    drupal_substr($url['path'], 1));
-
-  for ($i=0; db_fetch_array($result); $i++);
-  if ($i !== count($ops)) {
-    module_load_include('inc', 'taxonomy_access_user');
-    taxonomy_access_user_sql_uninstall();
-    taxonomy_access_user_sql_install();
-  }
-}
-
-
 

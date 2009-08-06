@@ -5,116 +5,13 @@
  * This file add helper functions for taxonomy_access_user module
  */
 
-/**
- * Function that will delete custom functions in the sql
- */
-function taxonomy_access_user_sql_uninstall() {
-  global $db_type;
 
-  $ops = array('view', 'update', 'delete', 'admin');
-  switch ($db_type) {
-  case 'mysql':
-  case 'mysqli':
-  case 'pgsql':
-    $sql = 'DROP FUNCTION IF EXISTS {grant_%op};';
-    break;
-  }
-
-  foreach ($ops as $op) {
-    db_query(str_replace('%op', $op, $sql));
-  }
-}
-
-/**
- * Function that will add custom functions in the sql
- */
-function taxonomy_access_user_sql_install() {
-  global $db_type, $active_db;
-
-  $ops = array('view', 'update', 'delete', 'admin');
-  $grant = array();
-
-  switch ($db_type) {
-  case 'mysql':
-  case 'mysqli':
-    $grant[] = <<<EOF
-CREATE FUNCTION {grant_%op} (atid INT, auid INT)
-RETURNS INT
-DETERMINISTIC
-BEGIN
-  DECLARE my%op INT DEFAULT 0;
-  DECLARE curtid INT;
-  SET curtid = atid;
-
-  main_loop: LOOP
-    SELECT grant_%op INTO my%op FROM {term_access_user} tau WHERE tau.tid = curtid AND tau.uid = auid LIMIT 1;
-    IF my%op = 1 THEN
-      LEAVE main_loop;
-    END IF;
-    IF my%op = -1 THEN
-      LEAVE main_loop;
-    END IF;
-    SELECT parent INTO curtid FROM {term_hierarchy} WHERE tid = curtid LIMIT 1;
-    IF curtid = 0 THEN
-      LEAVE main_loop;
-    END IF;
-  END LOOP main_loop;
-  RETURN my%op;
-END
-EOF;
-    break;
-  case 'pgsql':
-    $grant[] = <<<EOF
-CREATE LANGUAGE plpgsql;
-CREATE FUNCTION {grant_%op}(atid INT, auid INT) RETURNS INT AS $$
-DECLARE
-  my%op integer := 0;
-  curtid integer;
-BEGIN
-  curtid := atid;
-  LOOP
-    SELECT INTO my%op grant_%op FROM {term_access_user} tau WHERE tau.tid = curtid AND tau.uid = auid;
-    IF my%op = 1 THEN
-      EXIT;
-    END IF;
-    IF my%op = -1 THEN
-      EXIT;
-    END IF;
-    SELECT INTO curtid parent FROM {term_hierarchy} WHERE tid = curtid;
-    IF curtid = 0 THEN
-      EXIT;
-    END IF;
-  END LOOP;
-  RETURN my%op;
-END;
-$$ LANGUAGE plpgsql;
-EOF;
-    break;
-  default:
-    return NULL;
-  }
-  $grants = array();
-
-  foreach ($ops as $op) {
-    foreach ($grant as $query) {
-      $grants[$op][] = str_replace('%op', $op, $query);
-    }
-  }
-
-  unset($grant);
-
-  foreach ($grants as $grant) {
-    foreach ($grant as $query) {
-      db_query($query);
-    }
-  }
-}
 
 
 function _taxonomy_access_user_access_tid_one_access($tid, $access, $account = NULL) {
   global $user;
 
-  if ($account === NULL) {
+  if (!isset($account)) {
     $account = $user;
   }
 
@@ -169,7 +66,7 @@ function _taxonomy_access_user_access($terms, $access, $account = NULL) {
 function _taxonomy_access_user_get_access($tids, $account = NULL) {
   global $user;
 
-  if ($account === NULL) {
+  if (!isset($account)) {
     $account = $user;
   }
 

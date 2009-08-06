@@ -176,7 +176,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
     $parents = array(0);
   }
 
-  if ($tauid === NULL) {
+  if (!isset($tauid) {
     $tauid = new stdClass;
   }
 
