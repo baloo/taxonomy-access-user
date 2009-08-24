@@ -35,7 +35,6 @@ function taxonomy_access_user_form_alter(&$form, $form_state, $form_id) {
 
                 // Return access denied
                 drupal_access_denied();
-                die();
               }
             }
           }
@@ -119,14 +118,14 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 
 
   if (!is_null($access) && !is_array($access)) {
-    watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument is neither NULL nor array');
+    watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument is neither NULL nor array'));
     return NULL;
   }
 
   switch ($op) {
   case 'add':
     if (is_null($access)) {
-      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
+      watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument required'));
       return NULL;
     }
 
@@ -141,7 +140,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
       $term_access_user['grant_'. $op] = (isset($access['grant_'. $op])? $access['grant_'. $op] : 0);
     }
 
-    if (!$tauid = db_result(db_query('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid,))) {
+    if (!$tauid = db_result(db_query('SELECT tauid FROM {term_access_user} WHERE tid = %d AND uid = %d', $term->tid, $account->uid))) {
       drupal_write_record('term_access_user', $term_access_user);
     }
     else {
@@ -158,7 +157,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
   case 'access':
 
     if (is_null($access)) {
-      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
+      watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument required'));
       return NULL;
     }
 
@@ -477,10 +476,10 @@ function taxonomy_access_user_vocabulary_admin($vocabulary, $account = NULL) {
     return FALSE;
   }
 
-  return (bool) db_result(db_query('SELECT COUNT(*) FROM {term_data} td
-    WHERE td.vid = %d AND grant_admin(tid,%d) = 1',
+  return (bool) db_result(db_query(db_rewrite_sql('SELECT COUNT(*) FROM {term_data} t
+    WHERE t.vid = %d AND grant_admin(t.tid,%d) = 1', 't', 'tid'),
     $vocabulary->vid,
-    $account->uid, 0, 1);
+    $account->uid, 0, 1));
 }
 
 

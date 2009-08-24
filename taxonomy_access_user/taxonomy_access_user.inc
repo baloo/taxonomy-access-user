@@ -75,15 +75,15 @@ function _taxonomy_access_user_get_access($tids, $account = NULL) {
     $tids = array($tids);
   }
 
-  $result = db_query("SELECT
-    tid,
-    {grant_view}(tid, %d) as grant_view,
-    {grant_update}(tid, %d) as grant_update,
-    {grant_delete}(tid, %d) as grant_delete,
-    {grant_admin}(tid, %d) as grant_admin
-    FROM {term_data}
+  $result = db_query(db_rewrite_sql("SELECT
+    t.tid,
+    {grant_view}(t.tid, %d) as grant_view,
+    {grant_update}(t.tid, %d) as grant_update,
+    {grant_delete}(t.tid, %d) as grant_delete,
+    {grant_admin}(t.tid, %d) as grant_admin
+    FROM {term_data} t
     WHERE
-    tid IN (". db_placeholders($tids, 'text') .")",
+    t.tid IN (". db_placeholders($tids, 'text') .")", 't', 'tid'),
       array_merge(array(
         $account->uid,
         $account->uid,

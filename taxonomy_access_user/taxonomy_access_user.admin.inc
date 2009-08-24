@@ -176,7 +176,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
     $parents = array(0);
   }
 
-  if (!isset($tauid) {
+  if (!isset($tauid)) {
     $tauid = new stdClass;
   }
 
@@ -287,7 +287,7 @@ function taxonomy_access_user_access_edit_submit($form, &$form_state) {
   }
   else {
     drupal_write_record('term_access_user', $term_access_user, array('tauid'));
-  )
+  }
 
   $terms = array(taxonomy_get_term($form_state['values']['term']));
   $terms = array_merge($terms, taxonomy_get_children($form_state['values']['term']));
