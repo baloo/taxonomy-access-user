@@ -86,22 +86,15 @@ function taxonomy_access_user_term_edit($term) {
 function taxonomy_access_user_add_access($form_state, $term) {
   global $user;
 
-  if ($user->uid == $tauid->uid) {
-    drupal_set_message(t('You are about editing your own access to this term'), 'warning');
-  }
-
   $form = array();
 
   $ops = array('view', 'update', 'delete', 'admin');
-
-  $account = user_load($tauid->uid);
 
   $form['user'] = array(
     '#type' => 'textfield',
     '#title' => t('User'),
     '#maxlength' => 60,
     '#autocomplete_path' => 'user/autocomplete',
-    '#default_value' => check_plain($account->name),
     '#weight' => -1,
   );
 
@@ -192,7 +185,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
     $form['permissions']['grant_'. $op] = array(
       '#type' => 'radios',
       '#title' => t('@op term', array('@op' => $op)),
-      '#default_value' => intval($tauid->{'grant_'. $op}),
+      '#default_value' => isset($tauid->{'grant_'. $op})?intval($tauid->{'grant_'. $op}):0,
       '#options' => array(-1 => t('No'), 0 => t('Inherit'), 1 => t('Yes')),
     );
     // Unset the default value if it is the root tid
@@ -205,7 +198,7 @@ function taxonomy_access_user_access_add_edit_form(&$form, $term = NULL, $tauid 
 function taxonomy_access_user_access_edit($form_state, $tauid) {
   global $user;
 
-  if ($user->uid == $tauid->uid) {
+  if (count($form_state['post']) ===0 && $user->uid == $tauid->uid) {
     drupal_set_message(t('You are about editing your own access to this term'), 'warning');
   }
 
@@ -238,6 +231,8 @@ function taxonomy_access_user_access_edit($form_state, $tauid) {
     '#type' => 'value',
     '#value' => $tauid->tauid,
   );
+
+  $form['#redirect'] = 'taxonomy/access/edit/term/'. $tauid->tid;
 
   return $form;
 }

@@ -118,14 +118,14 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
 
 
   if (!is_null($access) && !is_array($access)) {
-    watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument is neither NULL nor array'));
+    watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument is neither NULL nor array');
     return NULL;
   }
 
   switch ($op) {
   case 'add':
     if (is_null($access)) {
-      watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument required'));
+      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
       return NULL;
     }
 
@@ -157,7 +157,7 @@ function taxonomy_access_user_control($op, $term, $access = NULL, $account = NUL
   case 'access':
 
     if (is_null($access)) {
-      watchdog('taxonomy access user', t('Wrong parameters passed to taxonomy_access_user_control() : $access argument required'));
+      watchdog('taxonomy access user', 'Wrong parameters passed to taxonomy_access_user_control() : $access argument required');
       return NULL;
     }
 
